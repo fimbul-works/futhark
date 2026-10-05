@@ -1,23 +1,24 @@
-import { charAt } from "./char-at";
+import { toGlyphs } from "./glyphs.js";
 
 /**
- * Encodes a number to using a specified alphabet string.
+ * Encodes a number using a specified alphabet string.
  *
- * @param {number} num - The number to encode
- * @param {string} alphabet - The alphabet to use for encoding
- * @returns {string} The base-62 encoded string
+ * @param {number} num - The number to encode.
+ * @param {string} alphabet - The alphabet to use for encoding.
+ * @returns {string} The alphabet encoded string.
  */
 export const encodeNumber = (num: number, alphabet: string): string => {
   if (num < 0) throw new Error("Negative numbers are not supported");
 
-  let result = "",
-    n = num,
-    len = alphabet.length;
+  const glyphs = toGlyphs(alphabet),
+    len = glyphs.length;
 
+  let result = "",
+    n = num;
   while (n > 0) {
-    result = charAt(alphabet, n % len) + result;
+    result = glyphs[n % len] + result;
     n = Math.floor(n / len);
   }
 
-  return result || charAt(alphabet, 0);
+  return result || glyphs[0];
 };

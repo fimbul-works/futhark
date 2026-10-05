@@ -1,6 +1,6 @@
 # @fimbul-works/futhark
 
-**Futhark** (Old Norse for *alphabet*) is a tiny, zero-dependency utility for encoding and decoding numbers using configurable alphabets -  with base-62 and Elder Futhark runes bundled out of the box.
+**Futhark** (Old Norse for *alphabet*) is a tiny, zero-dependency utility for encoding and decoding numbers and BigInts using configurable alphabets — bundling 15 built-in alphabets ranging from compact practical standards (Base-62, Base-58, Crockford Base-32) to historical scripts (Elder Futhark, Ogham, Glagolitic) and esoteric ciphers (I Ching, Braille, Zodiac).
 
 [![npm version](https://badge.fury.io/js/%40fimbul-works%2Ffuthark.svg)](https://www.npmjs.com/package/@fimbul-works/futhark)
 [![TypeScript](https://badges.frapsoft.com/typescript/code/typescript.svg?v=101)](https://github.com/microsoft/TypeScript)
@@ -8,42 +8,47 @@
 
 ## Features
 
-* **⚡ Ultra-lightweight**: Negligible bundle footprint - pure arithmetic, no dependencies.
-* **🔤 Alphabet-agnostic**: Encode with any ordered character set you define.
-* **🔢 Base-62 built-in**: URL-safe, case-sensitive compact number encoding.
-* **ᚠ Elder Futhark built-in**: Encode numbers as runic glyphs using the canonical 24-rune alphabet.
-* **🔁 Fully reversible**: Every encode has a matching decode - lossless round-trips guaranteed.
+* **⚡ Ultra-lightweight & Tree-shakeable**: Pure arithmetic, zero dependencies — import only the alphabets you use.
+* **🔢 Number & BigInt Support**: Encode standard `number`s or arbitrary-precision `bigint`s (Snowflake IDs, UUIDs, hashes).
+* **🔤 Alphabet-agnostic**: Encode and decode with any custom ordered character set you define.
+* **📦 15 Built-in Alphabets**: Compact ID compressors, historical runes, and esoteric ciphers.
+* **🔁 Fully Reversible**: Lossless round-trips guaranteed.
 
 ## Installation
 
 ```bash
+pnpm add @fimbul-works/futhark
+# or
 npm install @fimbul-works/futhark
+# or
+yarn add @fimbul-works/futhark
 ```
 
 ## Quick Start
 
-### Base-62 Encoding
+### Numbers & BigInts
 
 ```typescript
-import { encodeBase62, decodeBase62 } from '@fimbul-works/futhark';
+import {
+  encodeBase62,
+  decodeBase62,
+  encodeBigBase62,
+  decodeBigBase62,
+  encodeFuthark,
+  decodeFuthark,
+} from '@fimbul-works/futhark';
 
-encodeBase62(0);         // "0"
-encodeBase62(62);        // "10"
+// Base-62 ID encoding
 encodeBase62(123456789); // "8m0Kx"
-
 decodeBase62("8m0Kx");   // 123456789
-```
 
-### Runic Encoding
+// 64-bit / 128-bit BigInt support
+encodeBigBase62(18446744073709551615n); // "lYGhA16ahyf"
+decodeBigBase62("lYGhA16ahyf");          // 18446744073709551615n
 
-```typescript
-import { encodeFuthark, decodeFuthark } from '@fimbul-works/futhark';
-
-encodeFuthark(0);   // "ᚠ"
-encodeFuthark(24);  // "ᚢᚠ"
-encodeFuthark(999); // "ᚢᛒᛊ"
-
-decodeFuthark("ᚢᛒᛊ"); // 999
+// Elder Futhark runes
+encodeFuthark(999);      // "ᚢᛒᛊ"
+decodeFuthark("ᚢᛒᛊ");    // 999
 ```
 
 ### Custom Alphabet
@@ -51,61 +56,48 @@ decodeFuthark("ᚢᛒᛊ"); // 999
 Bring your own character set for domain-specific encodings:
 
 ```typescript
-import { encodeNumber, decodeNumber } from '@fimbul-works/futhark';
+import { encodeNumber, decodeNumber, encodeBigInt, decodeBigInt } from '@fimbul-works/futhark';
 
-const DNA = "ACGT";
+const FINGERS = "👌☝️✌️🤟🖖";
 
-encodeNumber(0, DNA);   // "A"
-encodeNumber(255, DNA); // "TTTT"
+encodeNumber(255, FINGERS);        // "☝️☝️👌🤟"
+decodeNumber("☝️☝️👌🤟", FINGERS); // 255
 
-decodeNumber("TTTT", DNA); // 255
+encodeBigInt(1000000000000n, FINGERS);                      // "✌️👌🖖🤟✌️✌️☝️👌☝️👌🤟👌☝️🤟🖖🖖"
+decodeBigInt("✌️👌🖖🤟✌️✌️☝️👌☝️👌🤟👌☝️🤟🖖🖖", FINGERS); // 1000000000000n
 ```
 
-## API
+## Built-in Alphabets
 
-### `encodeNumber(num, alphabet)`
+Each alphabet provides a constant and convenience functions for both `number` and `bigint` following the naming pattern:
+* `encode<Name>(num: number): string` / `decode<Name>(str: string): number`
+* `encodeBig<Name>(num: bigint): string` / `decodeBig<Name>(str: string): bigint`
 
-Encodes a non-negative integer into a string using the given alphabet.
+| Alphabet | Base | Sample Glyphs / Range | Constant |
+|---|---|---|---|
+| **Base-62** | 62 | `0–9`, `a–z`, `A–Z` | `BASE62_ALPHABET` |
+| **Base-64** | 64 | Standard Base-64 (`+`, `/`) | `BASE64_ALPHABET` |
+| **URL-Safe Base-64** | 64 | URL-safe Base-64 (`-`, `_`) | `URL_SAFE_BASE64_ALPHABET` |
+| **Base-58** | 58 | Bitcoin / IPFS (no `0`, `O`, `I`, `l`) | `BASE58_ALPHABET` |
+| **Crockford Base-32** | 32 | Unambiguous uppercase (no `I`, `L`, `O`, `U`) | `CROCKFORD_BASE32_ALPHABET` |
+| **Z85** | 85 | ZeroMQ string-safe printable ASCII | `Z85_ALPHABET` |
+| **Elder Futhark** | 24 | Norse runes (`ᚠᚢᚦᚨᚱᚲ...`) | `FUTHARK_ALPHABET` |
+| **Ogham** | 20 | Early Medieval Celtic script (`ᚁᚂᚃᚄᚅ...`) | `OGHAM_ALPHABET` |
+| **Glagolitic** | 41 | Old Church Slavonic script (`ⰀⰁⰂ...`) | `GLAGOLITIC_ALPHABET` |
+| **Zodiac** | 12 | Astrological signs (`♈♉♊♋...`) | `ZODIAC_ALPHABET` |
+| **I Ching Trigrams** | 8 | Taoist Bagua trigrams (`☰☱☲...`) | `TRIGRAM_ALPHABET` |
+| **I Ching Hexagrams** | 64 | Full divination set (`䷀䷁䷂...`) | `HEXAGRAM_ALPHABET` |
+| **Braille** | 64 | 6-dot Braille patterns (`⠀⠁⠂...`) | `BRAILLE_ALPHABET` |
+| **Dice** | 6 | Dice faces (`⚀⚁⚂⚃⚄⚅`) | `DICE_ALPHABET` |
+| **DNA** | 4 | Nucleotide bases (`ACGT`) | `DNA_ALPHABET` |
 
-| Parameter  | Type     | Description                          |
-|------------|----------|--------------------------------------|
-| `num`      | `number` | Non-negative integer to encode       |
-| `alphabet` | `string` | Ordered character set to encode with |
+## Documentation
 
-Returns `string`. Throws on negative input or an empty alphabet.
-
----
-
-### `decodeNumber(str, alphabet)`
-
-Decodes a string back into a number using the given alphabet.
-
-| Parameter  | Type     | Description                          |
-|------------|----------|--------------------------------------|
-| `str`      | `string` | Encoded string to decode             |
-| `alphabet` | `string` | The same alphabet used to encode     |
-
-Returns `number`. Throws if the string contains characters not in the alphabet.
-
----
-
-### `encodeBase62(num)` / `decodeBase62(str)`
-
-Convenience wrappers using `BASE62_ALPHABET` (`0–9`, `a–z`, `A–Z`).
-
-### `encodeFuthark(num)` / `decodeFuthark(str)`
-
-Convenience wrappers using `FUTHARK_ALPHABET` (ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ).
-
-### Exported Constants
-
-```typescript
-import { BASE62_ALPHABET, FUTHARK_ALPHABET } from '@fimbul-works/futhark';
-```
+Full TypeScript signatures, parameters, return types, and constants are documented in the [API Reference](docs/API.md).
 
 ## License
 
-MIT License - See [LICENSE](LICENSE) file for details.
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
